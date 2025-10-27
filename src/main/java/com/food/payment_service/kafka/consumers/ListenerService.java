@@ -28,6 +28,17 @@ public class ListenerService {
     private final Map<String, Acknowledgment> pendingAcks = new ConcurrentHashMap<>();
     private final Map<String, OrderEvent> pendingOrders = new ConcurrentHashMap<>();
 
+    /**
+     * Kafka listener for ORDER_CREATED events.
+     * <p>
+     * Parses the incoming message into an OrderEvent, stores the provided
+     * Acknowledgment for later manual approval and keeps the order data in-memory
+     * until it is acknowledged via {@link #ackPayment(String)}.
+     *
+     * @param message the raw JSON message received from Kafka
+     * @param ack     the acknowledgment provided by the Kafka listener for manual acking
+     * @throws JsonProcessingException if the message cannot be deserialized into OrderEvent
+     */
     @KafkaListener(topics = ORDER_CREATED, groupId = "${spring.kafka.consumer.group-id}")
     public void handleOrderCreated(String message, Acknowledgment ack) throws JsonProcessingException {
         OrderEvent orderEvent = objectMapper.readValue(message, OrderEvent.class);
@@ -41,6 +52,17 @@ public class ListenerService {
         log.info("Payment pending for orderId {}. Awaiting manual approval.", orderEvent.getOrderId());
     }
 
+    /**
+     * Manually acknowledge a pending payment for an order.
+     * <p>
+     * If a pending acknowledgment exists for the provided orderId, this method
+     * will publish a PAYMENT_COMPLETED event, acknowledge the Kafka message,
+     * and return a success message. If no pending entry exists, it will publish
+     * a PAYMENT_FAILED event and return a not-found message.
+     *
+     * @param orderId the id of the order to acknowledge payment for
+     * @return a human readable message indicating the result
+     */
     public String ackPayment(String orderId) {
         Acknowledgment ack = pendingAcks.remove(orderId);
         OrderEvent orderEvent = pendingOrders.remove(orderId);
