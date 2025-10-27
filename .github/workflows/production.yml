@@ -40,7 +40,7 @@ jobs:
         run: |
           echo "${{ secrets.EC2_SSH_KEY }}" > payment_key.pem
           chmod 600 payment_key.pem
-          ssh -o StrictHostKeyChecking=no -i payment_key.pem ${{ secrets.EC2_HOSTNAME }}@${{ secrets.EC2_PUBLIC_IP }} << 'EOF'
+          ssh -o StrictHostKeyChecking=no -i payment_key.pem ubuntu@ec2-65-0-109-150.ap-south-1.compute.amazonaws.com << 'EOF'
             sudo docker pull userbeta/payment-service:1.0.0
             sudo docker stop payment-service || true
             sudo docker rm payment-service || true
