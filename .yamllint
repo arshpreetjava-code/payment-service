@@ -1,6 +1,6 @@
 ---
 extends: default
 rules:
-  truthy: disable
+  truthy: enable
   line-length:
     max: 150
